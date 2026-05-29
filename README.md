@@ -238,7 +238,11 @@ param_grid = {
 
 ---
 
-## Phase 8 — Tableau Dashboard (LiveDashboard:https://public.tableau.com/views/CreditCardFraudDetectionRiskAnalyticsDashboard/Dashboard1?:language=enUS&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link 
+## Phase 8 — Tableau Dashboard 
+
+## Live Dashboard
+
+> 📊 **[View on Tableau Public -> [https://public.tableau.com/views/CreditCardFraudDetection-RiskAnalyticsDashboard/Dashboard1?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link]]**
 
 **4 interactive views:**
 
