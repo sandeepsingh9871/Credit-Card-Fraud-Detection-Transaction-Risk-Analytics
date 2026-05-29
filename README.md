@@ -238,7 +238,7 @@ param_grid = {
 
 ---
 
-## Phase 8 — Tableau Dashboard
+## Phase 8 — Tableau Dashboard (LiveDashboard:https://public.tableau.com/views/CreditCardFraudDetectionRiskAnalyticsDashboard/Dashboard1?:language=enUS&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link 
 
 **4 interactive views:**
 
@@ -290,7 +290,7 @@ credit-card-fraud-detection/
 │   └── phase4_config.json
 │
 ├── tableau/
-│   └── fraud_monitoring_dashboard.twbx
+│   └── Credit Card Fraud Detection - Risk Analytics Dashboard.twbx
 │
 ├── outputs/
 │   └── (all saved .png charts)
