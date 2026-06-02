@@ -360,3 +360,19 @@ Top features   : V14, V17, V12 (SHAP + correlation consistent)
 ---
 
 *Dataset: [Kaggle Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)*
+
+---
+
+## 📬 Contact
+
+**Sandeep Singh**
+
+- 💼 [LinkedIn](https://www.linkedin.com/in/sandeep-singh-aaa1271b7/)
+- 📧 [Email](mailto:sandeepsinghss9871@gmail.com)
+- 💻 [GitHub](https://github.com/sandeepsingh9871)
+
+---
+
+- 🌐 [Portfolio](https://sandeep-data-analyst-portfolio.vercel.app/)
+
+---
