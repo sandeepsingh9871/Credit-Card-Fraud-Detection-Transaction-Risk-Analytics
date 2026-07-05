@@ -74,15 +74,144 @@ Loaded raw CSV into MySQL and explored fraud patterns using pure SQL before any 
 **5 key queries written:**
 
 ```sql
--- Fraud rate by hour of day
+
+-- **QUERY 1** — Class Distribution & Key Amount Stats
+-- Q: "How imbalanced is the dataset? Quantify it."
+ 
 SELECT
-    FLOOR(Time / 3600) MOD 24     AS hour_of_day,
-    COUNT(*)                       AS total_txns,
-    SUM(Class)                     AS fraud_count,
-    ROUND(SUM(Class)*100.0/COUNT(*), 4) AS fraud_rate_pct
+    CASE Class WHEN 0 THEN 'Legitimate' ELSE 'Fraud' END   AS class_label,
+    COUNT(*)                                                AS txn_count,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 4)      AS pct_of_total,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount,
+    ROUND(MIN(Amount), 2)                                   AS min_amount,
+    ROUND(MAX(Amount), 2)                                   AS max_amount,
+    ROUND(STD(Amount),  2)                                  AS std_amount
+FROM transactions
+GROUP BY Class
+ORDER BY Class;
+ 
+--     Imbalance ratio                              
+SELECT
+    SUM(CASE WHEN Class = 0 THEN 1 ELSE 0 END)              AS legit_count,
+    SUM(CASE WHEN Class = 1 THEN 1 ELSE 0 END)              AS fraud_count,
+    ROUND(
+        SUM(CASE WHEN Class = 0 THEN 1 ELSE 0 END) /
+        SUM(CASE WHEN Class = 1 THEN 1 ELSE 0 END)
+    , 0)                                                    AS imbalance_ratio
+FROM transactions;
+
+-- QUERY 2 — Fraud Rate by Hour of Day
+-- Q: "Which hours have the highest fraud rate?
+--              Write a query to find out."
+ 
+SELECT
+    FLOOR(Time / 3600) MOD 24                               AS hour_of_day,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_count,
+    COUNT(*) - SUM(Class)                                   AS legit_count,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 4)                 AS fraud_rate_pct,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount,
+    ROUND(AVG(CASE WHEN Class = 1 THEN Amount END), 2)      AS avg_fraud_amount,
+    ROUND(AVG(CASE WHEN Class = 0 THEN Amount END), 2)      AS avg_legit_amount
 FROM transactions
 GROUP BY hour_of_day
 ORDER BY fraud_rate_pct DESC;
+ 
+--     Top 5 highest fraud-rate hours      
+SELECT
+    FLOOR(Time / 3600) MOD 24                               AS hour_of_day,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_count,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 4)                 AS fraud_rate_pct
+FROM transactions
+GROUP BY hour_of_day
+ORDER BY fraud_rate_pct DESC
+LIMIT 5;
+
+-- QUERY 3 — Amount Bucket Analysis (CASE WHEN bucketing)
+-- Q : "Bin transactions by amount and show
+--              fraud concentration per bucket."
+
+SELECT
+    CASE
+        WHEN Amount < 10                    THEN '1. Under $10'
+        WHEN Amount BETWEEN 10   AND 49.99  THEN '2. $10 – $49'
+        WHEN Amount BETWEEN 50   AND 99.99  THEN '3. $50 – $99'
+        WHEN Amount BETWEEN 100  AND 199.99 THEN '4. $100 – $199'
+        WHEN Amount BETWEEN 200  AND 499.99 THEN '5. $200 – $499'
+        ELSE                                     '6. $500 +'
+    END                                                     AS amount_bucket,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_txns,
+    COUNT(*) - SUM(Class)                                   AS legit_txns,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 3)                 AS fraud_rate_pct,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount,
+    ROUND(SUM(CASE WHEN Class = 1 THEN Amount ELSE 0 END), 2) AS total_fraud_amount
+FROM transactions
+GROUP BY amount_bucket
+ORDER BY amount_bucket;
+
+-- QUERY 4 — Transaction Velocity (Window Functions)
+--  Q: "Approximate how many transactions happen
+--              in short time windows and if velocity
+--              correlates with fraud."
+-- ============================================================
+ 
+-- Step 1: tag each transaction with its minute bucket count
+WITH velocity_tagged AS (
+    SELECT
+        Class,
+        Amount,
+        FLOOR(Time / 3600) MOD 24                           AS hour_of_day,
+        FLOOR(Time / 60)                                    AS minute_bucket,
+        COUNT(*) OVER (
+            PARTITION BY FLOOR(Time / 60)
+        )                                                   AS txns_in_same_minute
+    FROM transactions
+)
+-- Step 2: bucket by velocity and compute fraud rate
+SELECT
+    CASE
+        WHEN txns_in_same_minute = 1    THEN '1 txn  (low velocity)'
+        WHEN txns_in_same_minute <= 3   THEN '2–3 txns'
+        WHEN txns_in_same_minute <= 6   THEN '4–6 txns'
+        WHEN txns_in_same_minute <= 10  THEN '7–10 txns'
+        ELSE                                 '10+ txns (high velocity)'
+    END                                                     AS velocity_bucket,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_txns,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 4)                 AS fraud_rate_pct,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount
+FROM velocity_tagged
+GROUP BY velocity_bucket
+ORDER BY velocity_bucket;
+ 
+--     Time gap between consecutive transactions                         
+-- Shows how rapidly transactions occur — proxy for card testing
+WITH ordered AS (
+    SELECT
+        Class,
+        Amount,
+        Time,
+        LAG(Time) OVER (ORDER BY Time)                      AS prev_time
+    FROM transactions
+)
+SELECT
+    Class,
+    CASE
+        WHEN (Time - prev_time) < 1     THEN 'Under 1 sec'
+        WHEN (Time - prev_time) < 10    THEN '1–10 secs'
+        WHEN (Time - prev_time) < 60    THEN '10–60 secs'
+        WHEN (Time - prev_time) < 300   THEN '1–5 mins'
+        ELSE                                 '5 mins +'
+    END                                                     AS time_gap_bucket,
+    COUNT(*)                                                AS txn_count,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount
+FROM ordered
+WHERE prev_time IS NOT NULL
+GROUP BY Class, time_gap_bucket
+ORDER BY Class, time_gap_bucket;
+
 ```
 
 **SQL findings:**
