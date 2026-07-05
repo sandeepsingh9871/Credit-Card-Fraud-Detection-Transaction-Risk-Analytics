@@ -75,7 +75,7 @@ Loaded raw CSV into MySQL and explored fraud patterns using pure SQL before any 
 
 ```sql
 
--- **QUERY 1** — Class Distribution & Key Amount Stats
+-- QUERY 1 — Class Distribution & Key Amount Stats
 -- Q: "How imbalanced is the dataset? Quantify it."
  
 SELECT
@@ -155,7 +155,6 @@ ORDER BY amount_bucket;
 --  Q: "Approximate how many transactions happen
 --              in short time windows and if velocity
 --              correlates with fraud."
--- ============================================================
  
 -- Step 1: tag each transaction with its minute bucket count
 WITH velocity_tagged AS (
@@ -211,6 +210,119 @@ FROM ordered
 WHERE prev_time IS NOT NULL
 GROUP BY Class, time_gap_bucket
 ORDER BY Class, time_gap_bucket;
+
+-- QUERY 5 — Executive Summary (Single Query KPI View)
+-- Q: "Give me one query that tells a risk officer
+--              everything they need to know."
+ 
+SELECT
+    -- Volume
+    COUNT(*)                                                AS total_transactions,
+    SUM(Class)                                              AS total_fraud,
+    COUNT(*) - SUM(Class)                                   AS total_legitimate,
+ 
+    -- Rates
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 4)                 AS fraud_rate_pct,
+ 
+    -- Imbalance
+    ROUND(
+        (COUNT(*) - SUM(Class)) / SUM(Class)
+    , 0)                                                    AS imbalance_ratio,
+ 
+    -- Fraud amounts
+    ROUND(SUM(CASE WHEN Class=1 THEN Amount ELSE 0 END), 2) AS total_fraud_value,
+    ROUND(AVG(CASE WHEN Class=1 THEN Amount END),        2) AS avg_fraud_amount,
+    ROUND(AVG(CASE WHEN Class=0 THEN Amount END),        2) AS avg_legit_amount,
+    ROUND(MAX(CASE WHEN Class=1 THEN Amount END),        2) AS max_fraud_amount,
+ 
+    -- Fraud % under $100 (card-testing pattern)
+    ROUND(
+        SUM(CASE WHEN Class=1 AND Amount < 100 THEN 1 ELSE 0 END)
+        * 100.0 / SUM(Class)
+    , 1)                                                    AS fraud_pct_under_100,
+ 
+    -- Time span
+    ROUND(MIN(Time) / 3600, 1)                              AS data_start_hr,
+    ROUND(MAX(Time) / 3600, 1)                              AS data_end_hr,
+    ROUND((MAX(Time) - MIN(Time)) / 3600, 1)                AS data_span_hrs
+ 
+FROM transactions;
+
+-- VIEWS — Reusable named queries (feed Phase 2 & Tableau)
+-- ============================================================
+ 
+--     View 1: fraud_hourly_summary         
+DROP VIEW IF EXISTS fraud_hourly_summary;
+CREATE VIEW fraud_hourly_summary AS
+SELECT
+    FLOOR(Time / 3600) MOD 24                               AS hour_of_day,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_count,
+    COUNT(*) - SUM(Class)                                   AS legit_count,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 4)                 AS fraud_rate_pct,
+    ROUND(AVG(Amount), 2)                                   AS avg_amount,
+    ROUND(AVG(CASE WHEN Class=1 THEN Amount END), 2)        AS avg_fraud_amount
+FROM transactions
+GROUP BY hour_of_day;
+
+--     View 2: fraud_amount_buckets         
+DROP VIEW IF EXISTS fraud_amount_buckets;
+CREATE VIEW fraud_amount_buckets AS
+SELECT
+    CASE
+        WHEN Amount < 10                    THEN '1. Under $10'
+        WHEN Amount BETWEEN 10   AND 49.99  THEN '2. $10 – $49'
+        WHEN Amount BETWEEN 50   AND 99.99  THEN '3. $50 – $99'
+        WHEN Amount BETWEEN 100  AND 199.99 THEN '4. $100 – $199'
+        WHEN Amount BETWEEN 200  AND 499.99 THEN '5. $200 – $499'
+        ELSE                                     '6. $500 +'
+    END                                                     AS amount_bucket,
+    COUNT(*)                                                AS total_txns,
+    SUM(Class)                                              AS fraud_txns,
+    ROUND(SUM(Class) * 100.0 / COUNT(*), 3)                 AS fraud_rate_pct
+FROM transactions
+GROUP BY amount_bucket;
+
+--     View 3: clean_transactions (Phase 2 Python feed)             
+DROP VIEW IF EXISTS clean_transactions;
+CREATE VIEW clean_transactions AS
+SELECT
+    Time,
+    FLOOR(Time / 3600) MOD 24                               AS hour_of_day,
+    CASE
+        WHEN FLOOR(Time / 3600) MOD 24 BETWEEN 0  AND 5  THEN 'Night'
+        WHEN FLOOR(Time / 3600) MOD 24 BETWEEN 6  AND 11 THEN 'Morning'
+        WHEN FLOOR(Time / 3600) MOD 24 BETWEEN 12 AND 17 THEN 'Afternoon'
+        ELSE                                                    'Evening'
+    END                                                     AS time_of_day,
+    Amount,
+    LOG(Amount + 1)                                         AS log_amount,
+    V1,  V2,  V3,  V4,  V5,  V6,  V7,
+    V8,  V9,  V10, V11, V12, V13, V14,
+    V15, V16, V17, V18, V19, V20, V21,
+    V22, V23, V24, V25, V26, V27, V28,
+    Class
+FROM transactions;
+
+
+--     Verify all views                           
+SELECT
+    table_name   AS view_name,
+    table_type
+FROM information_schema.tables
+WHERE table_schema = 'fraud_detection'
+ORDER BY table_type, table_name;
+
+-- Export 1: full clean dataset → for Python Phase 2
+SET SESSION sql_select_limit = 300000;
+SELECT * FROM clean_transactions;
+
+
+-- Export 2: hourly summary → for Tableau dashboard
+SELECT * FROM fraud_hourly_summary ORDER BY hour_of_day;
+
+-- Export 3: amount buckets → for Tableau dashboard
+SELECT * FROM fraud_amount_buckets ORDER BY amount_bucket;
 
 ```
 
