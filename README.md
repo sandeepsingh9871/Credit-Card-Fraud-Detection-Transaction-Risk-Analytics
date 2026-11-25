@@ -455,7 +455,7 @@ Built 8 new features on top of 28 PCA features (the model uses 38 features in to
 - Threshold tuned using the Precision-Recall curve — not fixed at 0.5
 - F1-optimal threshold 0.982; the **cost-optimal threshold 0.09** (Phase 7) is used for the final operating point. Both were chosen on the test set (see Limitations)
 
-![Precision-Recall curve](imb_01_precision_recall_curve.png)
+![Precision-Recall curve]('imb_01_precision_recall_curve.png)
 ![Confusion matrix](imb_02_confusion_matrix.png)
 
 ---
