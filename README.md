@@ -457,6 +457,7 @@ Built 8 new features on top of 28 PCA features (the model uses 38 features in to
 
 ![Precision-Recall curve]('imb_01_precision_recall_curve.png)
 ![Confusion matrix](imb_02_confusion_matrix.png)
+*Confusion matrices at the F1-tuned thresholds (0.982 for scale_pos_weight, 0.996 for SMOTE). At the cost-optimal threshold 0.09 the final model gives TP 87, FP 20, FN 11.*
 
 ---
 
