@@ -1,0 +1,188 @@
+{
+  "split": {
+    "train": 170883,
+    "validation": 56962,
+    "test": 56962,
+    "test_fraud": 98
+  },
+  "features_used": 37,
+  "rapid_repeat_dropped": true,
+  "thresholds_chosen_on_validation": {
+    "cost_optimal": 0.77,
+    "f1_optimal": 0.98
+  },
+  "test_auc_pr": 0.864,
+  "test_auc_roc": 0.9785,
+  "test_operating_points": [
+    {
+      "operating_point": "cost-optimal (chosen on validation)",
+      "threshold": 0.77,
+      "TP": 78,
+      "FP": 7,
+      "FN": 20,
+      "precision": 0.9176,
+      "recall": 0.7959,
+      "f1": 0.8525,
+      "cost": 3105
+    },
+    {
+      "operating_point": "F1-optimal (chosen on validation)",
+      "threshold": 0.98,
+      "TP": 75,
+      "FP": 4,
+      "FN": 23,
+      "precision": 0.9494,
+      "recall": 0.7653,
+      "f1": 0.8475,
+      "cost": 3510
+    },
+    {
+      "operating_point": "default 0.5",
+      "threshold": 0.5,
+      "TP": 81,
+      "FP": 12,
+      "FN": 17,
+      "precision": 0.871,
+      "recall": 0.8265,
+      "f1": 0.8482,
+      "cost": 2730
+    }
+  ],
+  "bootstrap_95ci": [
+    {
+      "metric": "AUC-PR",
+      "operating_point": "threshold-free",
+      "estimate": 0.864,
+      "ci_low": 0.7963,
+      "ci_high": 0.9212
+    },
+    {
+      "metric": "AUC-ROC",
+      "operating_point": "threshold-free",
+      "estimate": 0.9785,
+      "ci_low": 0.9585,
+      "ci_high": 0.9938
+    },
+    {
+      "metric": "precision",
+      "operating_point": "cost-optimal (0.77)",
+      "estimate": 0.9176,
+      "ci_low": 0.8621,
+      "ci_high": 0.9744
+    },
+    {
+      "metric": "recall",
+      "operating_point": "cost-optimal (0.77)",
+      "estimate": 0.7959,
+      "ci_low": 0.7143,
+      "ci_high": 0.8673
+    },
+    {
+      "metric": "F1",
+      "operating_point": "cost-optimal (0.77)",
+      "estimate": 0.8525,
+      "ci_low": 0.7956,
+      "ci_high": 0.9011
+    },
+    {
+      "metric": "cost ($)",
+      "operating_point": "cost-optimal (0.77)",
+      "estimate": 3105.0,
+      "ci_low": 2025.0,
+      "ci_high": 4380.375
+    },
+    {
+      "metric": "precision",
+      "operating_point": "F1-optimal (0.98)",
+      "estimate": 0.9494,
+      "ci_low": 0.8974,
+      "ci_high": 0.9875
+    },
+    {
+      "metric": "recall",
+      "operating_point": "F1-optimal (0.98)",
+      "estimate": 0.7653,
+      "ci_low": 0.6735,
+      "ci_high": 0.8469
+    },
+    {
+      "metric": "F1",
+      "operating_point": "F1-optimal (0.98)",
+      "estimate": 0.8475,
+      "ci_low": 0.7852,
+      "ci_high": 0.8951
+    },
+    {
+      "metric": "cost ($)",
+      "operating_point": "F1-optimal (0.98)",
+      "estimate": 3510.0,
+      "ci_low": 2384.25,
+      "ci_high": 4860.375
+    }
+  ],
+  "ablation": [
+    {
+      "feature set": "V1-V28 only",
+      "n features": 28,
+      "CV AUC-PR (mean)": 0.8515,
+      "CV AUC-PR (sd)": 0.0248,
+      "CV AUC-ROC (mean)": 0.9811,
+      "AUC-PR change vs V-only": 0.0,
+      "folds better than V-only": "-"
+    },
+    {
+      "feature set": "V + amount features",
+      "n features": 31,
+      "CV AUC-PR (mean)": 0.8541,
+      "CV AUC-PR (sd)": 0.0276,
+      "CV AUC-ROC (mean)": 0.9812,
+      "AUC-PR change vs V-only": 0.0026,
+      "folds better than V-only": "4/5"
+    },
+    {
+      "feature set": "V + time features",
+      "n features": 32,
+      "CV AUC-PR (mean)": 0.8486,
+      "CV AUC-PR (sd)": 0.0305,
+      "CV AUC-ROC (mean)": 0.9846,
+      "AUC-PR change vs V-only": -0.0029,
+      "folds better than V-only": "2/5"
+    },
+    {
+      "feature set": "V + velocity features",
+      "n features": 30,
+      "CV AUC-PR (mean)": 0.8481,
+      "CV AUC-PR (sd)": 0.0282,
+      "CV AUC-ROC (mean)": 0.9837,
+      "AUC-PR change vs V-only": -0.0034,
+      "folds better than V-only": "2/5"
+    },
+    {
+      "feature set": "V + amount + time",
+      "n features": 35,
+      "CV AUC-PR (mean)": 0.8491,
+      "CV AUC-PR (sd)": 0.0299,
+      "CV AUC-ROC (mean)": 0.982,
+      "AUC-PR change vs V-only": -0.0024,
+      "folds better than V-only": "3/5"
+    },
+    {
+      "feature set": "V + all engineered (final, 37)",
+      "n features": 37,
+      "CV AUC-PR (mean)": 0.8441,
+      "CV AUC-PR (sd)": 0.0323,
+      "CV AUC-ROC (mean)": 0.9834,
+      "AUC-PR change vs V-only": -0.0073,
+      "folds better than V-only": "2/5"
+    },
+    {
+      "feature set": "V + all engineered + rapid_repeat (original 38)",
+      "n features": 38,
+      "CV AUC-PR (mean)": 0.8464,
+      "CV AUC-PR (sd)": 0.031,
+      "CV AUC-ROC (mean)": 0.9817,
+      "AUC-PR change vs V-only": -0.0051,
+      "folds better than V-only": "3/5"
+    }
+  ]
+}
